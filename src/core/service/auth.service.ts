@@ -8,10 +8,7 @@ import { HttpClient } from '@angular/common/http';
 })
 export class AuthService {
   // Signal to hold current user state
-  private _currentUser = signal<Usuario | null>(null);
-
-  currentUser = computed(() => this._currentUser());
-  isLoggedIn = computed(() => !!this._currentUser());
+  public _currentUser = signal('');
 
   constructor(private router: Router,
     private http: HttpClient
@@ -28,7 +25,7 @@ export class AuthService {
     this.http.post(`${url}`,req)
     .subscribe({
       next: (resp : any) => {
-
+        this._currentUser.set(resp.nome)
         sessionStorage.setItem('token',resp.token);
 
         this.router.navigate(['/dashboard']);
@@ -49,7 +46,7 @@ export class AuthService {
       dataCriacao: new Date(),
       googleId: ''
     };
-    this._currentUser.set(newUser);
+    // this._currentUser.set(newUser);
     this.router.navigate(['/dashboard']);
     return true;
   }

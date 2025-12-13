@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../service/auth.service';
@@ -71,7 +71,7 @@ import { HttpClient } from '@angular/common/http';
                 <h1 class="text-xl font-bold text-gray-800 tracking-tight">Mestre da Cozinha <span class="text-orange-600">Home</span></h1>
               </div>
               <div class="flex items-center space-x-4">
-                <span class="text-gray-600 text-sm hidden sm:block">Olá, {{ authService.currentUser()?.nome }}</span>
+                <span class="text-gray-600 text-sm hidden sm:block">Olá, {{ authService._currentUser() }}</span>
                 <button (click)="logout()" class="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 rounded-md hover:bg-red-50 transition-colors">Sair</button>
               </div>
             </div>
@@ -104,7 +104,7 @@ import { HttpClient } from '@angular/common/http';
                   </div>
                   <button 
                     type="submit"
-                    [disabled]="loading() || form.invalid"
+                    [disabled]="loading() || form.invalid || limiteAtingido()"
                     class="bg-orange-600 text-white px-8 py-3 rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md shadow-orange-200 transition-all transform active:scale-95 flex items-center justify-center min-w-[160px]">
                     @if (loading()) {
                       <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -112,9 +112,13 @@ import { HttpClient } from '@angular/common/http';
                         <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                       </svg>
                       Cozinhando...
+                    } @else if (limiteAtingido()) {
+                      <span>🚫 Limite Atingido</span>
                     } @else {
                       <span>✨ Criar Receita</span>
                     }
+
+                    
                   </button>
                 </div>
               </form>
@@ -335,12 +339,13 @@ import { HttpClient } from '@angular/common/http';
     </style>
   `
 })
-export class DashboardComponent {
+export class DashboardComponent implements OnInit {
   authService = inject(AuthService);
   endpointService = inject(EndpointService);
   http = inject(HttpClient);
   fb = inject(FormBuilder);
   
+  limiteAtingido = signal(false);
   loading = signal(false);
   receitasGeradas = signal<ReceitaParsed[]>([]);
   receitaSelecionada = signal<ReceitaParsed | null>(null);
@@ -349,6 +354,29 @@ export class DashboardComponent {
   form = this.fb.group({
     ingredientes: new FormControl('', [Validators.required])
   });
+
+  ngOnInit() {
+    const url = 'http://localhost:8081/api/v1/receitas'
+    const auth = sessionStorage.getItem('token')
+
+    console.log(this.authService._currentUser());
+
+    this.http.get(`${url}/listAll`, {headers: {Authorization: `Bearer ${auth}`}})
+    .subscribe({
+      next: (resp : any) => {
+
+          if(resp.length > 8) {
+            this.limiteAtingido.set(true);
+          }
+      }, 
+      error: (e) => {
+        console.log(e.error.message);
+      }
+    });
+
+    
+
+  }
 
   // Método para gerar receitas
   gerarReceita() {
