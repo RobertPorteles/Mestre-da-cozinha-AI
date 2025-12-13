@@ -89,35 +89,35 @@ import { HttpClient } from '@angular/common/http';
                 <p class="text-gray-500">Liste os ingredientes disponíveis e deixe a IA criar a mágica.</p>
               </div>
               
-              <div class="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto">
-                <div class="flex-1 relative">
-                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <span class="text-gray-400">🥕</span>
+              <form [formGroup]="form" (ngSubmit)="gerarReceita()">
+                <div class="flex flex-col sm:flex-row gap-4 max-w-4xl mx-auto">
+                  <div class="flex-1 relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <span class="text-gray-400">🥕</span>
+                    </div>
+                    <input 
+                      type="text" 
+                      formControlName="ingredientes"
+                      placeholder="Ex: 2 ovos, meio tomate, cebola e farinha de trigo..." 
+                      class="block w-full pl-10 pr-3 py-4 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm shadow-sm transition-all"
+                    />
                   </div>
-                  <form [formGroup]="form">
-                  <input 
-                    type="text" 
-                    formControlName="ingredientes"
-                    (keyup.enter)="gerarReceita()"
-                    placeholder="Ex: 2 ovos, meio tomate, cebola e farinha de trigo..." 
-                    class="block w-full pl-10 pr-3 py-4 border border-gray-300 rounded-xl leading-5 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 sm:text-sm shadow-sm transition-all"
-                  /> </form>
+                  <button 
+                    type="submit"
+                    [disabled]="loading() || form.invalid"
+                    class="bg-orange-600 text-white px-8 py-3 rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md shadow-orange-200 transition-all transform active:scale-95 flex items-center justify-center min-w-[160px]">
+                    @if (loading()) {
+                      <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Cozinhando...
+                    } @else {
+                      <span>✨ Criar Receita</span>
+                    }
+                  </button>
                 </div>
-                <button 
-                  (click)="gerarReceita()" 
-                  [disabled]="loading()"
-                  class="bg-orange-600 text-white px-8 py-3 rounded-xl hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed font-semibold shadow-md shadow-orange-200 transition-all transform active:scale-95 flex items-center justify-center min-w-[160px]">
-                  @if (loading()) {
-                    <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                      <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Cozinhando...
-                  } @else {
-                    <span>✨ Criar Receita</span>
-                  }
-                </button>
-              </div>
+              </form>
             </div>
 
             <!-- Results Section -->
@@ -338,66 +338,73 @@ import { HttpClient } from '@angular/common/http';
 export class DashboardComponent {
   authService = inject(AuthService);
   endpointService = inject(EndpointService);
-  http = inject(HttpClient)
-  promptInput = '';
-  fb = inject(FormBuilder)
+  http = inject(HttpClient);
+  fb = inject(FormBuilder);
+  
   loading = signal(false);
-  receitaRecente = signal<Receita | null>(null);
-  historico = signal<Receita[]>([]);
+  receitasGeradas = signal<ReceitaParsed[]>([]);
+  receitaSelecionada = signal<ReceitaParsed | null>(null);
+  historico = signal<ReceitaParsed[]>([]);
 
   form = this.fb.group({
-    ingredientes: new FormControl('',[Validators.required])
-  })
+    ingredientes: new FormControl('', [Validators.required])
+  });
 
-  constructor() {
-    // Carregar histórico inicial (mock)
-    // this.historico.set(this.endpointService.getHistoricoReceitas
+  // Método para gerar receitas
+  gerarReceita() {
+    if (this.form.invalid) {
+      return;
+    }
+
+    const auth = sessionStorage.getItem('token');
+    this.loading.set(true);
+    const url = 'http://localhost:8081/api/v1/receitas';
+    
+    const promptInput = this.form.value.ingredientes || '';
+
+    this.http.post<ReceitaAPI>(url, this.form.value, {
+      headers: { Authorization: `Bearer ${auth}` }
+    }).subscribe({
+      next: (response: ReceitaAPI) => {
+        console.log('Resposta da API:', response);
+        
+        // Processa TODAS as receitas
+        const receitasParsed = this.endpointService.parseTodasReceitas(response, promptInput);
+        
+        console.log('Receitas processadas:', receitasParsed);
+        
+        // Exibe todas as receitas geradas
+        this.receitasGeradas.set(receitasParsed);
+        
+        // Adiciona TODAS as receitas ao histórico
+        this.historico.update(hist => [...receitasParsed, ...hist]);
+        
+        // Limpa o formulário
+        this.form.reset();
+        
+        this.loading.set(false);
+      },
+      error: (e) => {
+        console.error('Erro ao gerar receita:', e);
+        this.loading.set(false);
+      }
+    });
   }
 
- receitasGeradas = signal<ReceitaParsed[]>([]);
- receitaSelecionada = signal<ReceitaParsed | null>(null);
+  // Método para visualizar receita completa
+  visualizarReceita(receita: ReceitaParsed) {
+    this.receitaSelecionada.set(receita);
+  }
+  
+  // Método para selecionar receita da sidebar
+  selecionarReceita(receita: ReceitaParsed) {
+    this.receitaSelecionada.set(receita);
+  }
 
-// Método para gerar receitas
-gerarReceita() {
-
-  const auth = sessionStorage.getItem('token')
-
-  this.loading.set(true);
-  const url = 'http://localhost:8081/api/v1/receitas'
-
-  this.promptInput = this.form.value.ingredientes
-
-  this.http.post(`${url}`,this.form.value, {headers: {Authorization: `Bearer ${auth}`}}).subscribe({
-    next: (response: ReceitaAPI) => {
-      // Processa TODAS as receitas
-      const receitasParsed = this.endpointService.parseTodasReceitas(response, this.promptInput);
-      
-      // Exibe a primeira receita
-      this.receitaRecente.set(receitasParsed[0]);
-      
-      // Adiciona TODAS as receitas ao histórico
-      this.historico.update(hist => [...receitasParsed, ...hist]);
-      
-      // Limpa o input
-      this.promptInput = '';
-      
-      this.loading.set(false);
-    },
-    error: (e) => {
-      console.log(e.error.message)
-    }
-  });
-}
-
-// Método para visualizar receita completa
-visualizarReceita(receita: ReceitaParsed) {
-  this.receitaSelecionada.set(receita);
-}
-
-// Método para fechar visualização
-fecharReceita() {
-  this.receitaSelecionada.set(null);
-}
+  // Método para fechar visualização
+  fecharReceita() {
+    this.receitaSelecionada.set(null);
+  }
 
   logout() {
     this.authService.logout();

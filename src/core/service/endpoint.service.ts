@@ -77,9 +77,9 @@ export class EndpointService {
 }
 
  extractIngredientes(prompt: string): string[] {
-  // Separa ingredientes por vírgula ou "e"
+  // Separa ingredientes APENAS por vírgula
   const ingredientes = prompt
-    .split(/,|e(?=\s)/)
+    .split(',')
     .map(i => i.trim())
     .filter(i => i.length > 0)
     .map(i => {
