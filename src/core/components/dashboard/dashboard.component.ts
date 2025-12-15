@@ -141,73 +141,91 @@ import { Router } from '@angular/router';
               </form>
             </div>
 
-            <!-- Results Section -->
-            @if (receitasGeradas().length > 0) {
+                @if (erroMensagem()) {
+                  <div class="max-w-4xl mx-auto mt-4">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 animate-fade-in">
+                      <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                      </svg>
+                      <div class="flex-1">
+                        <div class="flex items-center justify-between">
+                          <h4 class="text-sm font-semibold text-red-800 mb-1">Erro ao gerar receita</h4>
+                          <button (click)="fecharErro()" class="text-red-400 hover:text-red-600 transition-colors">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                              <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                            </svg>
+                          </button>
+                        </div>
+                        <p class="text-sm text-red-700">{{ erroMensagem() }}</p>
+                      </div>
+                    </div>
+                  </div>
+                }
+
+            <!-- Results Section - Receita Única Gerada -->
+            @if (receitaGerada()) {
               <div class="mb-6">
                 <div class="flex items-center justify-between mb-4">
                   <h3 class="text-2xl font-bold text-gray-800 flex items-center">
                     <span class="mr-2 text-2xl">🍽️</span> 
-                    Receitas Geradas
-                    <span class="ml-3 text-sm font-normal text-gray-500">({{ receitasGeradas().length }} opções)</span>
+                    Receita Gerada
                   </h3>
                 </div>
 
-                <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                  @for (receita of receitasGeradas(); track receita.id) {
-                    <div class="bg-white rounded-2xl shadow-lg shadow-gray-200 border border-gray-100 overflow-hidden hover:shadow-xl transition-shadow cursor-pointer"
-                         (click)="visualizarReceita(receita)">
-                      <!-- Header Receita -->
-                      <div class="bg-gradient-to-r from-orange-500 to-red-500 px-6 py-4 text-white relative overflow-hidden">
-                        <div class="absolute top-0 right-0 -mt-4 -mr-4 w-20 h-20 bg-white opacity-10 rounded-full blur-xl"></div>
-                        <h2 class="text-xl font-bold relative z-10 line-clamp-2">{{ receita.titulo }}</h2>
-                        <div class="flex flex-wrap gap-2 mt-3 text-orange-50 text-xs font-medium relative z-10">
-                          <span class="flex items-center bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm">
-                            ⏱️ {{ receita.tempoPreparo }}
-                          </span>
-                          <span class="flex items-center bg-white/20 px-2 py-1 rounded-full backdrop-blur-sm">
-                            🔥 {{ receita.calorias }}
-                          </span>
-                        </div>
+                <div class="bg-white rounded-2xl shadow-xl shadow-gray-200 border border-gray-100 overflow-hidden animate-fade-in">
+                  <!-- Header Receita -->
+                  <div class="bg-gradient-to-r from-orange-500 to-red-500 px-8 py-6 text-white relative overflow-hidden">
+                    <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
+                    <h2 class="text-3xl font-bold relative z-10">{{ receitaGerada()!.nome }}</h2>
+                    <div class="flex flex-wrap gap-4 mt-4 text-orange-50 font-medium relative z-10">
+                      <span class="flex items-center bg-white/20 px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+                        ⏱️ {{ receitaGerada()!.tempoPreparo }}
+                      </span>
+                      <span class="flex items-center bg-white/20 px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+                        🔥 {{ receitaGerada()!.calorias }}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div class="p-8">
+                    <div class="grid md:grid-cols-2 gap-8">
+                      <!-- Ingredientes -->
+                      <div>
+                        <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center border-b pb-2 border-orange-100">
+                          <span class="text-orange-500 mr-2">🛒</span> Ingredientes
+                        </h4>
+                        <ul class="space-y-2">
+                          @for (item of receitaGerada()!.ingredientes; track $index) {
+                            <li class="flex items-start text-gray-600 bg-orange-50/50 p-2 rounded-lg text-sm">
+                              <span class="h-1.5 w-1.5 mt-2 mr-2.5 bg-orange-400 rounded-full flex-shrink-0"></span>
+                              {{ item }}
+                            </li>
+                          }
+                        </ul>
                       </div>
-                      
-                      <div class="p-5">
-                        <!-- Preview dos Ingredientes -->
-                        <div class="mb-4">
-                          <h4 class="text-sm font-bold text-gray-800 mb-2 flex items-center">
-                            <span class="text-orange-500 mr-1">🛒</span> Ingredientes
-                          </h4>
-                          <div class="flex flex-wrap gap-1">
-                            @for (item of receita.ingredientes.slice(0, 4); track $index) {
-                              <span class="text-xs bg-orange-50 text-orange-700 px-2 py-1 rounded">
-                                {{ item }}
-                              </span>
-                            }
-                            @if (receita.ingredientes.length > 4) {
-                              <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
-                                +{{ receita.ingredientes.length - 4 }}
-                              </span>
-                            }
-                          </div>
-                        </div>
 
-                        <!-- Preview das Instruções -->
-                        <div>
-                          <h4 class="text-sm font-bold text-gray-800 mb-2 flex items-center">
-                            <span class="text-orange-500 mr-1">🍳</span> Modo de Preparo
-                          </h4>
-                          <p class="text-xs text-gray-600 line-clamp-3">
-                            {{ receita.instrucoes[0] }}
-                          </p>
-                          <button class="mt-3 text-xs text-orange-600 hover:text-orange-700 font-semibold flex items-center">
-                            Ver receita completa
-                            <svg class="w-3 h-3 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                            </svg>
-                          </button>
+                      <!-- Instruções -->
+                      <div>
+                        <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center border-b pb-2 border-orange-100">
+                          <span class="text-orange-500 mr-2">🍳</span> Preparo
+                        </h4>
+                        <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                          @for (passo of receitaGerada()!.instrucoes; track $index) {
+                            <div class="flex gap-3">
+                              <span class="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-700 font-bold text-sm rounded-full flex items-center justify-center mt-0.5">
+                                {{ $index + 1 }}
+                              </span>
+                              <p class="text-gray-600 text-sm leading-relaxed">{{ passo }}</p>
+                            </div>
+                          }
                         </div>
                       </div>
                     </div>
-                  }
+                  </div>
+                  <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 text-xs text-gray-400 flex justify-between items-center">
+                    <span>Gerado via ChefIA</span>
+                    <span>{{ receitaGerada()!.dataGeracao | date:'short' }}</span>
+                  </div>
                 </div>
               </div>
             }
@@ -267,7 +285,7 @@ import { Router } from '@angular/router';
                           @for (passo of receitaSelecionada()!.preparo; track $index) {
                             <div class="flex gap-3">
                               <span class="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-700 font-bold text-sm rounded-full flex items-center justify-center mt-0.5">
-                              {{$index + 1}}
+                                {{ $index + 1 }}
                               </span>
                               <p class="text-gray-600 text-sm leading-relaxed">{{ passo }}</p>
                             </div>
@@ -278,14 +296,14 @@ import { Router } from '@angular/router';
                   </div>
                   <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 text-xs text-gray-400 flex justify-between items-center">
                     <span>Gerado via ChefIA</span>
-                    <span>{{ receitaSelecionada()!.dataHora | date:'short' }}</span>
+                    <span>{{ receitaSelecionada()!.dataGeracao | date:'short' }}</span>
                   </div>
                 </div>
               </div>
             }
 
             <!-- Empty State -->
-            @if (receitasGeradas().length === 0 && !receitaSelecionada()) {
+            @if (!receitaGerada() && !receitaSelecionada()) {
               <div class="bg-white rounded-2xl shadow-sm border border-dashed border-gray-300 p-12 text-center min-h-[400px] flex flex-col items-center justify-center text-gray-400">
                 <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-4">
                   <span class="text-4xl opacity-50">🥘</span>
@@ -364,8 +382,9 @@ export class DashboardComponent implements OnInit {
   router = inject(Router)
   nomeUsuario = signal('')  
   limiteAtingido = signal(false);
-  loading = signal(false);
-  receitasGeradas = signal<ReceitaParsed[]>([]);
+  erroMensagem = signal('');
+  loading = signal(false);  
+  receitaGerada = signal<ReceitaParsed | null>(null);
   receitaSelecionada = signal<ReceitaConsulta | null>(null);
   historico = signal<any[]>([]);
 
@@ -386,9 +405,7 @@ export class DashboardComponent implements OnInit {
     .subscribe({
       next: (resp : any) => {
 
-          if(resp.length > 8) {
-            this.limiteAtingido.set(true);
-          }
+          
 
           this.historico.set(resp)
       }, 
@@ -419,16 +436,12 @@ export class DashboardComponent implements OnInit {
       next: (response: ReceitaAPI) => {
         console.log('Resposta da API:', response);
         
-        // Processa TODAS as receitas
-        const receitasParsed = this.endpointService.parseTodasReceitas(response, promptInput);
+        const receitasParsed = this.endpointService.parseSingleReceita(response.conteudo, promptInput);
         
         console.log('Receitas processadas:', receitasParsed);
         
         // Exibe todas as receitas geradas
-        this.receitasGeradas.set(receitasParsed);
-        
-        // Adiciona TODAS as receitas ao histórico
-        this.historico.update(hist => [...receitasParsed, ...hist]);
+        this.receitaGerada.set(receitasParsed[0]);
         
         // Limpa o formulário
         this.form.reset();
@@ -437,6 +450,12 @@ export class DashboardComponent implements OnInit {
       },
       error: (e) => {
         console.error('Erro ao gerar receita:', e);
+
+        if(e.error.message === 'Você ultrapassou os limites de receitas grátis por hoje. Assine o Premium!') {
+          this.limiteAtingido.set(true)
+        }
+
+        this.erroMensagem.set(e.error.message)
         this.loading.set(false);
       }
     });
@@ -451,13 +470,15 @@ export class DashboardComponent implements OnInit {
     .subscribe({
       next: (resp : ReceitaConsulta) => {
        this.receitaSelecionada.set(resp)
-       console.log(this.receitaSelecionada())
       },
       error: (e) => {
         console.log(e.error.message)
       }
     })
 
+  }
+  fecharErro() {
+    this.erroMensagem.set('');
   }
 
   // Método para visualizar receita completa
