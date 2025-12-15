@@ -21,3 +21,12 @@ export interface ReceitaParsed {
   calorias: string;
   dataGeracao: Date;
 }
+
+export interface ReceitaConsulta {
+  id: string;
+  nome: string;
+  ingredientes: string[];
+  preparo: string[];
+  tempoPreparo: string;
+  dataHora: Date
+}

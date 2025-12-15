@@ -20,6 +20,11 @@ export const routes: Routes = [
     loadComponent: () => import('./core/components/login-success/login-success').then(m => m.LoginSuccess)
   },
   {
+    path: 'planos',
+    loadComponent: () => import('./core/components/planos-component/planos-component').then(m => m.PlanosComponent),
+    canActivate: [AuthGuard]
+  },
+  {
     path:'',
     pathMatch:'full',
     redirectTo:'login'

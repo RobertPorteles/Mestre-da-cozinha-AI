@@ -48,7 +48,7 @@ import { AuthService } from '../../service/auth.service';
           <div>
             <button type="submit" 
               [disabled]="loginForm.invalid"
-              class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+              class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-orange-600 hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
               Entrar
             </button>
           </div>
@@ -76,7 +76,7 @@ import { AuthService } from '../../service/auth.service';
           </div>
 
           <div class="text-sm text-center">
-            <a routerLink="/cadastro" class="font-medium text-emerald-600 hover:text-emerald-500">
+            <a routerLink="/cadastro" class="font-medium text-orange-600 hover:text-orange-500">
               Não tem uma conta? Cadastre-se
             </a>
           </div>

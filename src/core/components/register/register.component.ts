@@ -75,9 +75,9 @@ export class RegisterComponent {
   });
 
   onSubmit() {
-    if (this.registerForm.valid) {
+    
       const { nome, email, senha } = this.registerForm.value;
       this.authService.register(nome, email, senha);
-    }
+    
   }
 }

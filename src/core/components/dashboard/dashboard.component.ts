@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { AuthService } from '../../service/auth.service';
 import { EndpointService } from '../../service/endpoint.service';
-import { Receita, ReceitaAPI, ReceitaParsed } from '../../models/receita';
+import { Receita, ReceitaAPI, ReceitaConsulta, ReceitaParsed } from '../../models/receita';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-dashboard',
@@ -31,14 +32,14 @@ import { HttpClient } from '@angular/common/http';
                 [class.border-orange-300]="receitaSelecionada()?.id === receita.id"
                 (click)="selecionarReceita(receita)">
                 <h4 class="font-semibold text-gray-800 text-sm mb-1 group-hover:text-orange-600 transition-colors line-clamp-2">
-                  {{ receita.titulo }}
+                  {{ receita.nome }}
                 </h4>
                 <div class="flex items-center justify-between text-[10px] text-gray-400 mt-2">
                   <span class="flex items-center">
                     <span class="mr-1">⏱️</span>
                     {{ receita.tempoPreparo }}
                   </span>
-                  <span>{{ receita.dataGeracao | date:'dd/MM/yy' }}</span>
+                  <span>{{ receita.data | date:'dd/MM/yy' }}</span>
                 </div>
               </div>
             }
@@ -71,7 +72,11 @@ import { HttpClient } from '@angular/common/http';
                 <h1 class="text-xl font-bold text-gray-800 tracking-tight">Mestre da Cozinha <span class="text-orange-600">Home</span></h1>
               </div>
               <div class="flex items-center space-x-4">
-                <span class="text-gray-600 text-sm hidden sm:block">Olá, {{ authService._currentUser() }}</span>
+                <button (click)="irParaPremium()" class="text-sm bg-gradient-to-r from-orange-500 to-red-500 text-white font-bold px-4 py-2 rounded-lg hover:from-orange-600 hover:to-red-600 transition-all shadow-md hover:shadow-lg transform hover:scale-105 flex items-center gap-1">
+                  <span>💎</span>
+                  <span class="hidden sm:inline">Plano Premium</span>
+                </button>
+                <span class="text-gray-600 text-sm hidden sm:block">Olá, {{ nomeUsuario() }}</span>
                 <button (click)="logout()" class="text-sm text-red-600 hover:text-red-800 font-medium px-3 py-1 rounded-md hover:bg-red-50 transition-colors">Sair</button>
               </div>
             </div>
@@ -117,10 +122,22 @@ import { HttpClient } from '@angular/common/http';
                     } @else {
                       <span>✨ Criar Receita</span>
                     }
-
-                    
                   </button>
                 </div>
+
+                @if (limiteAtingido()) {
+                  <div class="max-w-4xl mx-auto mt-4">
+                    <div class="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                      <svg class="w-5 h-5 text-red-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                      </svg>
+                      <div class="flex-1">
+                        <h4 class="text-sm font-semibold text-red-800 mb-1">Limite de receitas atingido</h4>
+                        <p class="text-sm text-red-700">Você atingiu o limite máximo de receitas geradas hoje. Tente novamente amanhã ou considere fazer um upgrade do seu plano.</p>
+                      </div>
+                    </div>
+                  </div>
+                }
               </form>
             </div>
 
@@ -213,7 +230,7 @@ import { HttpClient } from '@angular/common/http';
                   <!-- Header Receita -->
                   <div class="bg-gradient-to-r from-orange-500 to-red-500 px-8 py-6 text-white relative overflow-hidden">
                     <div class="absolute top-0 right-0 -mt-4 -mr-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
-                    <h2 class="text-3xl font-bold relative z-10">{{ receitaSelecionada()!.titulo }}</h2>
+                    <h2 class="text-3xl font-bold relative z-10">{{ receitaSelecionada()!.nome }}</h2>
                     <div class="flex flex-wrap gap-4 mt-4 text-orange-50 font-medium relative z-10">
                       <span class="flex items-center bg-white/20 px-3 py-1 rounded-full text-sm backdrop-blur-sm">
                         ⏱️ {{ receitaSelecionada()!.tempoPreparo }}
@@ -247,10 +264,10 @@ import { HttpClient } from '@angular/common/http';
                           <span class="text-orange-500 mr-2">🍳</span> Preparo
                         </h4>
                         <div class="space-y-4 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
-                          @for (passo of receitaSelecionada()!.instrucoes; track $index) {
+                          @for (passo of receitaSelecionada()!.preparo; track $index) {
                             <div class="flex gap-3">
                               <span class="flex-shrink-0 w-6 h-6 bg-orange-100 text-orange-700 font-bold text-sm rounded-full flex items-center justify-center mt-0.5">
-                                {{ $index + 1 }}
+                              {{$index + 1}}
                               </span>
                               <p class="text-gray-600 text-sm leading-relaxed">{{ passo }}</p>
                             </div>
@@ -261,7 +278,7 @@ import { HttpClient } from '@angular/common/http';
                   </div>
                   <div class="bg-gray-50 px-6 py-3 border-t border-gray-100 text-xs text-gray-400 flex justify-between items-center">
                     <span>Gerado via ChefIA</span>
-                    <span>{{ receitaSelecionada()!.dataGeracao | date:'short' }}</span>
+                    <span>{{ receitaSelecionada()!.dataHora | date:'short' }}</span>
                   </div>
                 </div>
               </div>
@@ -344,22 +361,26 @@ export class DashboardComponent implements OnInit {
   endpointService = inject(EndpointService);
   http = inject(HttpClient);
   fb = inject(FormBuilder);
-  
+  router = inject(Router)
+  nomeUsuario = signal('')  
   limiteAtingido = signal(false);
   loading = signal(false);
   receitasGeradas = signal<ReceitaParsed[]>([]);
-  receitaSelecionada = signal<ReceitaParsed | null>(null);
-  historico = signal<ReceitaParsed[]>([]);
+  receitaSelecionada = signal<ReceitaConsulta | null>(null);
+  historico = signal<any[]>([]);
 
   form = this.fb.group({
     ingredientes: new FormControl('', [Validators.required])
   });
 
   ngOnInit() {
+    
+    const name = sessionStorage.getItem('nome');
+    this.nomeUsuario.set(name)
+
     const url = 'http://localhost:8081/api/v1/receitas'
     const auth = sessionStorage.getItem('token')
 
-    console.log(this.authService._currentUser());
 
     this.http.get(`${url}/listAll`, {headers: {Authorization: `Bearer ${auth}`}})
     .subscribe({
@@ -368,6 +389,8 @@ export class DashboardComponent implements OnInit {
           if(resp.length > 8) {
             this.limiteAtingido.set(true);
           }
+
+          this.historico.set(resp)
       }, 
       error: (e) => {
         console.log(e.error.message);
@@ -419,19 +442,42 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  consultarReceita(id : string){
+    
+    const url = 'http://localhost:8081/api/v1/receitas'
+    const auth = sessionStorage.getItem('token')
+
+    this.http.get(`${url}/${id}`, {headers: {Authorization: `Bearer ${auth}`}})
+    .subscribe({
+      next: (resp : ReceitaConsulta) => {
+       this.receitaSelecionada.set(resp)
+       console.log(this.receitaSelecionada())
+      },
+      error: (e) => {
+        console.log(e.error.message)
+      }
+    })
+
+  }
+
   // Método para visualizar receita completa
-  visualizarReceita(receita: ReceitaParsed) {
+  visualizarReceita(receita: any) {
     this.receitaSelecionada.set(receita);
   }
   
   // Método para selecionar receita da sidebar
-  selecionarReceita(receita: ReceitaParsed) {
+  selecionarReceita(receita: any) {
     this.receitaSelecionada.set(receita);
+    this.consultarReceita(receita.id);
   }
 
   // Método para fechar visualização
   fecharReceita() {
     this.receitaSelecionada.set(null);
+  }
+
+  irParaPremium() {
+    this.router.navigate(['/planos'])
   }
 
   logout() {

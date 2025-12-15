@@ -8,7 +8,6 @@ import { HttpClient } from '@angular/common/http';
 })
 export class AuthService {
   // Signal to hold current user state
-  public _currentUser = signal('');
 
   constructor(private router: Router,
     private http: HttpClient
@@ -25,8 +24,8 @@ export class AuthService {
     this.http.post(`${url}`,req)
     .subscribe({
       next: (resp : any) => {
-        this._currentUser.set(resp.nome)
         sessionStorage.setItem('token',resp.token);
+        sessionStorage.setItem('nome', resp.nome);
 
         this.router.navigate(['/dashboard']);
       },
@@ -36,19 +35,27 @@ export class AuthService {
     })
   }
 
-  register(nome: string, email: string, senha: string): boolean {
-    // Simulating backend registration
-    const newUser: Usuario = {
-      id: crypto.randomUUID(),
-      nome: nome,
-      email: email,
-      senha: senha,
-      dataCriacao: new Date(),
-      googleId: ''
-    };
-    // this._currentUser.set(newUser);
-    this.router.navigate(['/dashboard']);
-    return true;
+  register(nome: string, email: string, senha: string) {
+      const url = 'http://localhost:8080/api/v1/auth/cadastrar'
+
+      const req = {
+        nome: nome,
+        email: email,
+        senha: senha
+      }
+
+      this.http.post(`${url}`, req)
+      .subscribe({
+        next: () => {
+          this.router.navigate(['/login'])
+        },
+        error: (e) => {
+          if(e.error.text === 'Cadastro concluído com sucesso!') {
+            this.router.navigate(['/login'])
+          }
+        }
+      })
+
   }
 
   logout() {
